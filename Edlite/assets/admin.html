@@ -1,0 +1,74 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <title>admin</title>
+</head>
+<body>
+  <h2>Index</h2>
+  <form>
+    <fieldset>
+      <div>
+        <textarea name="query" data-bind="value: query" style="width: 100%; height: 300px;"></textarea>
+      </div>
+    </fieldset>
+    <button id="run" data-bind="click: submitQuery">Run</button>
+  </form>
+  <div data-bind="css: {'message-error': error, 'message-success': error() == null}">
+    <p data-bind="text: message"></p>
+  </div>
+  <div id="results" data-bind="template: { name: 'results-template', foreach: results, as: 'table'}">
+  </div>
+  <script type="text/html" id="results-template">
+    <table data-bind="template: { name: 'row-template', foreach: $data, as: 'row'}"></table>
+  </script>
+  <script type="text/html" id="row-template">
+    <tr data-bind="template: { name: 'cell-template', foreach: $data, as: 'cell'}"></tr>
+  </script>
+  <script type="text/html" id="cell-template">
+    <td data-bind="text: $data"></td>
+  </script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/knockout/3.2.0/knockout-min.js"></script>
+  <script>
+    function QueryViewModel() {
+      var self = this;
+      this.query = ko.observable();
+      this.message = ko.observable();
+      this.error = ko.observable();
+      this.status = ko.computed(function () {
+        if (self.error()) {
+          return 'message-error'
+        }
+
+        return 'message-success';
+      });
+      this.results = ko.observableArray();
+      this.submitQuery = function () {
+        $.ajax({
+          url: '/edlite.axd/db',
+          type: 'POST',
+          data: { query: self.query },
+          dataType: 'json',
+          success: function (data) {
+            if (data.error) {
+              self.error(data.error);
+              self.message(data.error);
+            }
+            else {
+              self.error(null);
+              self.message(data.message);
+            }
+
+            self.results(data.results);
+          },
+          error: function () {
+            alert('Error');
+          }
+        });
+      };
+    };
+    var viewModel = new QueryViewModel();
+    ko.applyBindings(viewModel);
+  </script>
+</body>
+</html>
